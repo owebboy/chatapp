@@ -1,2 +1,47 @@
 <h1>{{title}}</h1>
 <p>Welcome to {{title}}</p>
+
+{{#if user}}
+<div class="app">
+  <h4>friends</h4>
+  <div class="friends">
+
+  </div>
+  <h4>chats</h4>
+  <div class="chats">
+
+  </div>
+</div>
+{{else}}
+
+<form method="post" action="/register">
+  <h3>Register</h3>
+  <p>
+    <label>Username:</label>
+    <input type="text" name="username" placeholder="Username">
+  </p>
+  <p>
+    <label>Password:</label>
+    <input type="password" name="password" placeholder="Password">
+  </p>
+
+  <button type="submit" name="button">Register</button>
+
+</form>
+
+<form method="post" action="/login">
+  <h3>Signin</h3>
+  <p>
+    <label>Username:</label>
+    <input type="text" name="username" placeholder="Username">
+  </p>
+  <p>
+    <label>Password:</label>
+    <input type="password" name="password" placeholder="Password">
+  </p>
+
+  <button type="submit" name="button">Signin</button>
+
+</form>
+
+{{/if}}

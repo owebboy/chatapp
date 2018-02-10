@@ -14,6 +14,10 @@ var sessionMiddleware = expressSession({
     })
 });
 
+var mongoose = require('mongoose');
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
+
 var index = require('./routes/index');
 var users = require('./routes/users');
 
@@ -23,8 +27,27 @@ var io = app.io = require("socket.io")();
 io.use(function(socket, next) {
   sessionMiddleware(socket.request, {}, next);
 })
+
 io.on("connection", function(socket) {
-  console.log(socket.request.session.passport);
+
+  var username = socket.request.session.passport.user;
+
+  User.findOne({ username: username }).populate('friends').exec(function(err, user) {
+    if (err) return socket.emit('err', err)
+    socket.emit('user', user)
+  })
+
+  socket.on('add_friend', function(data, fn) {
+    User.findOne({ username: data.friend }, function(err, friend) {
+      if (err) return socket.emit('err', err)
+      User.findOneAndUpdate({ _id: data.me }, { $push: {friends:friend._id} }, {new : true}, function(err, user) {
+        if (err) return socket.emit('err', err)
+        fn(user)
+      })
+    })
+
+  })
+
 });
 
 // view engine setup
@@ -36,6 +59,9 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(stylus.middleware(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -46,9 +72,10 @@ const User = require('./models/user');
 
 // CHANGE: USE "createStrategy" INSTEAD OF "authenticate"
 passport.use(User.createStrategy());
-
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
+
+mongoose.connect('mongodb://localhost/chat')
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
