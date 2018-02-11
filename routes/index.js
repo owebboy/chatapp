@@ -1,5 +1,7 @@
 var express = require('express');
 var passport = require('passport');
+var ColorHash = require('color-hash');
+var colorHash = new ColorHash()
 
 var router = express.Router();
 var User = require('../models/user');
@@ -11,15 +13,8 @@ router.get('/', function(req, res, next) {
 
 /* POST Register */
 router.post('/register', function(req, res, next) {
-  console.log('registering user');
-  User.register(new User({username: req.body.username}), req.body.password, function(err) {
-    if (err) {
-      console.log('error while user register!', err);
-      return next(err);
-    }
-
-    console.log('user registered!');
-
+  User.register(new User({username: req.body.username, color: colorHash.hex(req.body.username)}), req.body.password, function(err) {
+    if (err) return next(err);
     res.redirect('/');
   });
 });

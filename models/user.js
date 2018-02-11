@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 const passportLocalMongoose = require('passport-local-mongoose');
 
 const User = new Schema({
-  friends: [{type: Schema.ObjectId, ref: 'User'}]
+  color: String
 });
 
 User.plugin(passportLocalMongoose);

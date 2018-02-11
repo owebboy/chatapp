@@ -6,11 +6,12 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var stylus = require('stylus');
 var expressSession = require("express-session");
+
 var sessionMiddleware = expressSession({
     name: "COOKIE_NAME_HERE",
     secret: "COOKIE_SECRET_HERE",
     store: new (require("connect-mongo")(expressSession))({
-        url: "mongodb://localhost/chat"
+        url: "mongodb://localhost/chat1"
     })
 });
 
@@ -28,24 +29,47 @@ io.use(function(socket, next) {
   sessionMiddleware(socket.request, {}, next);
 })
 
+var allClients = []
 io.on("connection", function(socket) {
-
+  if (socket.request.session.passport == undefined) return
   var username = socket.request.session.passport.user;
+  allClients.push(socket)
 
-  User.findOne({ username: username }).populate('friends').exec(function(err, user) {
+  socket.on('disconnect', function() {
+    var i = allClients.indexOf(socket);
+    allClients.splice(i, 1);
+    socket.broadcast.emit('message/notification', socket.request.session.passport.user + ' left.' + allClients.length + ' online.')
+  });
+
+  socket.on('connection', function(data) {
+      socket.broadcast.emit('message/notification', data.username + ' joined. ' + allClients.length + ' online.')
+  })
+
+  User.findOne({ username: username }).exec(function(err, user) {
     if (err) return socket.emit('err', err)
     socket.emit('user', user)
   })
 
-  socket.on('add_friend', function(data, fn) {
-    User.findOne({ username: data.friend }, function(err, friend) {
+  socket.on('message/get_all', function() {
+    Message.find({}).populate('_author').exec(function(err, messages) {
       if (err) return socket.emit('err', err)
-      User.findOneAndUpdate({ _id: data.me }, { $push: {friends:friend._id} }, {new : true}, function(err, user) {
+      for (var i = 0; i < messages.length; i++) {
+        socket.emit('message/receive', messages[i])
+      }
+    })
+  })
+
+  socket.on('message/send', function(data) {
+    Message.create({
+      content: data.message,
+      _author: data.user
+    }, function(err, message) {
+      if (err) return socket.emit('err', err)
+      Message.populate(message, { path: '_author' }, function(err, message) {
         if (err) return socket.emit('err', err)
-        fn(user)
+        io.emit('message/receive', message)
       })
     })
-
   })
 
 });
@@ -68,14 +92,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', index);
 app.use('/users', users);
 
-const User = require('./models/user');
+var User = require('./models/user');
+var Message = require('./models/message')
 
 // CHANGE: USE "createStrategy" INSTEAD OF "authenticate"
 passport.use(User.createStrategy());
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-mongoose.connect('mongodb://localhost/chat')
+mongoose.connect('mongodb://localhost/chat1')
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
