@@ -16,8 +16,13 @@ socket.on('user', function(data) {
 })
 
 socket.on('message/receive', function(data) {
-  console.log(data);
   logger.log(data, data._author)
+  users.typing(data._author, false)
+  window.scrollTo(0, document.body.scrollHeight)
+})
+
+socket.on('message/typing', function(data) {
+  users.typing(data, true)
   window.scrollTo(0, document.body.scrollHeight)
 })
 
@@ -26,12 +31,19 @@ socket.on('message/notification', function(data) {
   window.scrollTo(0, document.body.scrollHeight)
 })
 
+socket.on('users/append', function(data) {
+  users.append(data)
+})
+socket.on('users/remove', function(data) {
+  users.remove(data)
+})
+
 var input = document.querySelector('.input')
 var innerInput = document.createElement('input')
 innerInput.placeholder = 'Type message and press enter'
 innerInput.addEventListener('keypress', function(e) {
   socket.emit('message/typing', user)
-  if (e.keyCode == 13) {
+  if (e.keyCode == 13 && innerInput.value != '') {
     socket.emit('message/send', {
       user: user,
       message: innerInput.value
@@ -66,7 +78,7 @@ var logger = {
     // date
     var date = document.createElement('span')
     date.classList.add('date')
-    date.textContent = new Date(msg.date).toLocaleString('en-US', { hour12: false })
+    date.textContent = new Date(msg.date).toLocaleString('en-US')
     context.appendChild(date)
 
     // content
@@ -90,5 +102,32 @@ var logger = {
   },
   flush: function() {
     loggerWrapper.innerHTML = ''
+  }
+}
+
+var userWrapper = document.querySelector('.users')
+var users = {
+  append: function(user) {
+    if(!document.getElementById(user._id)) {
+      var avatar = document.createElement('div')
+      avatar.id = user._id
+      avatar.classList.add('user-item')
+      avatar.style.color = user.color
+      avatar.textContent = user.username
+      userWrapper.appendChild(avatar)
+    }
+  },
+  typing: function(user, boolean) {
+    var avatar = document.getElementById(user._id)
+    if (!avatar) return
+    if (boolean == true) {
+      avatar.classList.add('typing')
+    } else {
+      avatar.classList.remove('typing')
+    }
+  },
+  remove: function(user) {
+    var avatar = document.getElementById(user._id)
+    if (avatar) userWrapper.removeChild(avatar)
   }
 }

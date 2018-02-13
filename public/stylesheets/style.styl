@@ -1,21 +1,32 @@
 *, *:before, *:after
   box-sizing: border-box
-
+html
+  margin: 0
 body
-  padding: 2em 20%
   font: 14px "Roboto Mono", monospace
-  background: #111
+  background: hsla(0, 0%, 7%, 1.00)
   color: #fff
-  padding-bottom: 10em;
+  padding: 5em 0 9em 0;
 a
   color: #fff
 
+.users
+  position: fixed
+  top: 0
+  width: 100%
+  padding: 1.5em 0
+  margin: 0 10px
+  background: hsla(0, 0%, 7%, 0.8)
+.user-item
+  display: inline
+  padding-right: .7em
+
 .input
   position: fixed
-  bottom: 0%
+  bottom: 0
   width: 100%
   input
-    background: #111
+    background: hsla(0, 0%, 7%, 0.8)
     color: #fff
     border: 0
     font-family: "Roboto Mono", monospace
@@ -23,6 +34,10 @@ a
     font-size: 1em
     padding-bottom: 1em
     padding-top: 1em
+    outline: none
+    margin: 0
+    :focus, :active
+      outline: none
 
 .notification
   float: left
@@ -40,6 +55,7 @@ a
   float: left
   width: calc(1/3 * 100% - 20px)
   margin: 10px
+
 .content
   float: left
   width: calc(2/3 * 100% - 20px)

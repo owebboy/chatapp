@@ -35,15 +35,22 @@ io.on("connection", function(socket) {
   var username = socket.request.session.passport.user;
   allClients.push(socket)
 
-  socket.on('disconnect', function() {
+  User.findOne({ username:username }, function(err, user) {
+    if (err) return socket.emit('err', err)
+    socket.user = user
+  })
+
+  socket.on('join', function(data) {
+    for (var i = 0; i < allClients.length; i++) {
+      io.emit('users/append', allClients[i].user)
+    }
+  })
+
+  socket.on('disconnecting', function() {
     var i = allClients.indexOf(socket);
     allClients.splice(i, 1);
-    socket.broadcast.emit('message/notification', socket.request.session.passport.user + ' left.' + allClients.length + ' online.')
+    io.emit('users/remove', socket.user)
   });
-
-  socket.on('connection', function(data) {
-      socket.broadcast.emit('message/notification', data.username + ' joined. ' + allClients.length + ' online.')
-  })
 
   User.findOne({ username: username }).exec(function(err, user) {
     if (err) return socket.emit('err', err)
@@ -72,7 +79,11 @@ io.on("connection", function(socket) {
     })
   })
 
-});
+  socket.on('message/typing', function(data) {
+    socket.broadcast.emit('message/typing', data)
+  })
+
+})
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -95,7 +106,6 @@ app.use('/users', users);
 var User = require('./models/user');
 var Message = require('./models/message')
 
-// CHANGE: USE "createStrategy" INSTEAD OF "authenticate"
 passport.use(User.createStrategy());
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
@@ -111,11 +121,8 @@ app.use(function(req, res, next) {
 
 // error handler
 app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
   res.status(err.status || 500);
   res.render('error');
 });
