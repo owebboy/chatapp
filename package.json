@@ -10,7 +10,7 @@
     "color-hash": "^1.0.3",
     "connect-mongo": "^2.0.1",
     "cookie-parser": "~1.4.3",
-    "debug": "~2.6.9",
+    "debug": "~4.3.4",
     "express": "~4.15.5",
     "express-session": "^1.15.6",
     "hbs": "~4.0.1",
